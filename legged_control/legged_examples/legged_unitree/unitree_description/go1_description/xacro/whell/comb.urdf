@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- This URDF was automatically created by SolidWorks to URDF Exporter! Originally created by Stephen Brawner (brawner@gmail.com) 
+     Commit Version: 1.6.0-1-g15f4949  Build Version: 1.6.7594.29634
+     For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
+<robot
+  name="装配体3">
+  <link
+    name="base_link">
+    <inertial>
+      <origin
+        xyz="0.01372 0.013283 6.6861E-05"
+        rpy="0 0 0" />
+      <mass
+        value="0.19334" />
+      <inertia
+        ixx="0.00023237"
+        ixy="-5.6193E-08"
+        ixz="-5.6423E-08"
+        iyy="0.00012669"
+        iyz="-6.5889E-08"
+        izz="0.00012669" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://装配体3/meshes/base_link.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="1 1 1 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://装配体3/meshes/base_link.STL" />
+      </geometry>
+    </collision>
+  </link>
+</robot>
