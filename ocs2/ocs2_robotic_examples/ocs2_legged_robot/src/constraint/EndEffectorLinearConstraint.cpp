@@ -85,10 +85,10 @@ vector_t EndEffectorLinearConstraint::getValue(scalar_t time, const vector_t& st
     VectorXd velocity(3);
     velocity = endEffectorKinematicsPtr_->getVelocity(state, input).front();
     Rot.setZero(3,3);
-    Rot(0,0) = cos(-state(9));
-    Rot(0,1) = -sin(-state(9));
-    Rot(1,0) = sin(-state(9));
-    Rot(1,1) = cos(-state(9));
+    Rot(0,0) = cos(state(9));
+    Rot(0,1) = -sin(state(9));
+    Rot(1,0) = sin(state(9));
+    Rot(1,1) = cos(state(9));
     Rot(2,2) = 1;
     f.noalias() += config_.Av *Rot*velocity;
   }
@@ -115,10 +115,10 @@ VectorFunctionLinearApproximation EndEffectorLinearConstraint::getLinearApproxim
   if (config_.Av.size() > 0) {
     MatrixXd Rot;
     Rot.setZero(3,3);
-    Rot(0,0) = cos(-state(9));
-    Rot(0,1) = -sin(-state(9));
-    Rot(1,0) = sin(-state(9));
-    Rot(1,1) = cos(-state(9));
+    Rot(0,0) = cos(state(9));
+    Rot(0,1) = -sin(state(9));
+    Rot(1,0) = sin(state(9));
+    Rot(1,1) = cos(state(9));
     Rot(2,2) = 1;
     const auto velocityApprox = endEffectorKinematicsPtr_->getVelocityLinearApproximation(state, input).front();
     VectorXd vf = velocityApprox.f;

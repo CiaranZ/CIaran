@@ -26,7 +26,7 @@ public:
                        const std::vector<ContactSensorHandle>& contact_sensor_handles,
                        const hardware_interface::ImuSensorHandle& imu_sensor_handle);
   vector_t update(const ros::Time& time, const ros::Duration& period) override;
-
+  vector_t updatewheel() override;
 private:
   void updateFromTopic();
 

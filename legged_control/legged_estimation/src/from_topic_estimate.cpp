@@ -39,4 +39,11 @@ vector_t FromTopicStateEstimate::update(const ros::Time& time, const ros::Durati
   return rbd_state_;
 }
 
+vector_t FromTopicStateEstimate::updatewheel()
+{
+
+  updateWheelStates();
+  return wheeleds_state_;
+}
+
 }  // namespace legged

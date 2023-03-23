@@ -15,6 +15,7 @@ StateEstimateBase::StateEstimateBase(LeggedInterface& legged_interface,
   : legged_interface_(legged_interface)
   , generalized_coordinates_num_(legged_interface.getCentroidalModelInfo().generalizedCoordinatesNum)
   , rbd_state_(2 * generalized_coordinates_num_)
+  , wheeleds_state_(4)
   , hybrid_joint_handles_(hybrid_joint_handles)
   , contact_sensor_handles_(contact_sensor_handles)
   , imu_sensor_handle_(imu_sensor_handle)
@@ -64,14 +65,17 @@ void StateEstimateBase::updateJointStates()
     rbd_state_(6 + i) = hybrid_joint_handles_[i].getPosition();
     rbd_state_(generalized_coordinates_num_ + 6 + i) = hybrid_joint_handles_[i].getVelocity();
   }
-  // for (size_t i = 0; i < 4; ++i)    //ZTODO：
-  // {
-  //   wheeleds_state_(i) = hybrid_joint_handles_[12+i].getVelocity();
-  //   // rbd_state_(generalized_coordinates_num_ + 6 + i) = hybrid_joint_handles_[i].getVelocity();
-  // }
 
 }
 
+void StateEstimateBase::updateWheelStates()
+{
+  for (size_t i = 0; i < 4; i++)    //ZTODO：
+  {
+    wheeleds_state_(i) = hybrid_joint_handles_[12+i].getVelocity();
+    // rbd_state_(generalized_coordinates_num_ + 6 + i) = hybrid_joint_handles_[i].getVelocity();
+  }
+}
 void StateEstimateBase::publishMsgs(const nav_msgs::Odometry& odom, const ros::Time& time)
 {
   scalar_t publish_rate = 100;

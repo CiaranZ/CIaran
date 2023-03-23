@@ -261,6 +261,13 @@ vector_t KalmanFilterEstimate::update(const ros::Time& time, const ros::Duration
   return rbd_state_;
 }
 
+vector_t KalmanFilterEstimate::updatewheel()
+{
+
+  updateWheelStates();
+  return wheeleds_state_;
+}
+
 void KalmanFilterEstimate::updateFromTopic()
 {
   auto msg = buffer_.readFromRT();

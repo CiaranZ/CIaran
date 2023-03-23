@@ -22,8 +22,8 @@ class Wbc
 public:
   Wbc(const std::string& task_file, LeggedInterface& legged_interface,
       const PinocchioEndEffectorKinematics& ee_kinematics, bool verbose);
-  vector_t update(const vector_t& state_desired, const vector_t& input_desired, vector_t& measured_rbd_state,
-                  size_t mode);
+  vector_t update(const vector_t& state_desired, const vector_t& input_desired, vector_t& measured_rbd_state,vector_t& measured_wheel_state
+                     ,size_t mode);
 
 private:
   void loadTasksSetting(const std::string& task_file, bool verbose);
@@ -43,7 +43,7 @@ private:
   CentroidalModelPinocchioMapping mapping_;
   std::unique_ptr<PinocchioEndEffectorKinematics> ee_kinematics_;
 
-  vector_t state_desired_, input_desired_, measured_q_, measured_v_;
+  vector_t state_desired_, input_desired_, measured_q_, measured_v_,measured_v_wheel;
   matrix_t j_, dj_;
   contact_flag_t contact_flag_;
   size_t num_contacts_;

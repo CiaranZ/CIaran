@@ -19,7 +19,7 @@ public:
                          const hardware_interface::ImuSensorHandle& imu_sensor_handle);
 
   vector_t update(const ros::Time& time, const ros::Duration& period) override;
-
+  vector_t updatewheel() override;
 private:
   void callback(const nav_msgs::Odometry::ConstPtr& msg);
 

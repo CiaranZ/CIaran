@@ -129,6 +129,9 @@ void LeggedController::update(const ros::Time& time, const ros::Duration& period
   current_observation_.time += period.toSec();
 
   vector_t measured_rbd_state = state_estimate_->update(time, period);      //
+  ROS_INFO_STREAM("BEFORE UPDATA wheel");
+  vector_t measured_wheel_state = state_estimate_->updatewheel();
+  ROS_INFO_STREAM("after UPDATA wheel");
   scalar_t yaw_last = current_observation_.state(9);                    // 前面6个是转矩，7，8是pitch,row,9是YAW
   current_observation_.state = rbd_conversions_->computeCentroidalStateFromRbdModel(measured_rbd_state);        //state实际是16+6+6，但是需要把他简化成12+6+6
   current_observation_.state(9) = yaw_last + angles::shortest_angular_distance(yaw_last, current_observation_.state(9));
@@ -149,9 +152,12 @@ void LeggedController::update(const ros::Time& time, const ros::Duration& period
 
   // Whole body control
   current_observation_.input = optimized_input;
-  vector_t x = wbc_->update(optimized_state, optimized_input, measured_rbd_state, planned_mode);
-
-  vector_t torque = x.tail(12);
+  ROS_INFO_STREAM("BEFORE WBC");
+  vector_t x = wbc_->update(optimized_state, optimized_input, measured_rbd_state, measured_wheel_state,planned_mode);
+  std::cout <<  x<<std::endl;
+    ROS_INFO_STREAM("AFTER WBC");
+// vector_t x;
+  vector_t torque = x.tail(16);
 
   vector_t pos_des = centroidal_model::getJointAngles(optimized_state, legged_interface_->getCentroidalModelInfo());
   vector_t vel_des = centroidal_model::getJointVelocities(optimized_input, legged_interface_->getCentroidalModelInfo());
@@ -173,16 +179,19 @@ void LeggedController::update(const ros::Time& time, const ros::Duration& period
   for (size_t j = 0; j < legged_interface_->getCentroidalModelInfo().actuatedDofNum; ++j)
     hybrid_joint_handles_[j].setCommand(pos_des(j), vel_des(j), 5, 3, torque(j));
 
+  for (size_t j = 12; j < 16; ++j)
+    hybrid_joint_handles_[j].setCommand(0, 0, 0, 0, torque(j));
+
   contact_flag_t is_contact;
 
   vector3_t unitwheelvector;
   unitwheelvector(0) = cos(current_observation_.state(9));
   unitwheelvector(1) = sin(current_observation_.state(9));
   is_contact = modeNumber2StanceLeg(planned_mode);
-  is_contact[0]?hybrid_joint_handles_[12+0].setCommand(0, 0, 0, 0, 1000*unitwheelvector.dot(feetPositions[0]- tempposition[0])):hybrid_joint_handles_[12+0].setCommand(0, 0, 0, 0, 0);//l
-  is_contact[2]?hybrid_joint_handles_[12+1].setCommand(0, 0, 0, 0, 1000*unitwheelvector.dot(feetPositions[2]- tempposition[2])):hybrid_joint_handles_[12+1].setCommand(0, 0, 0, 0, 0);//l
-  is_contact[1]?hybrid_joint_handles_[12+2].setCommand(0, 0, 0, 0, 1000*unitwheelvector.dot(feetPositions[1]- tempposition[1])):hybrid_joint_handles_[12+2].setCommand(0, 0, 0, 0, 0);//r
-  is_contact[3]?hybrid_joint_handles_[12+3].setCommand(0, 0, 0, 0, 1000*unitwheelvector.dot(feetPositions[3]- tempposition[3])):hybrid_joint_handles_[12+3].setCommand(0, 0, 0, 0, 0);//r
+  // is_contact[0]?hybrid_joint_handles_[12+0].setCommand(0, 0, 0, 0, 1000*unitwheelvector.dot(feetPositions[0]- tempposition[0])):hybrid_joint_handles_[12+0].setCommand(0, 0, 0, 0, 0);//l
+  // is_contact[2]?hybrid_joint_handles_[12+1].setCommand(0, 0, 0, 0, 1000*unitwheelvector.dot(feetPositions[2]- tempposition[2])):hybrid_joint_handles_[12+1].setCommand(0, 0, 0, 0, 0);//l
+  // is_contact[1]?hybrid_joint_handles_[12+2].setCommand(0, 0, 0, 0, 1000*unitwheelvector.dot(feetPositions[1]- tempposition[1])):hybrid_joint_handles_[12+2].setCommand(0, 0, 0, 0, 0);//r
+  // is_contact[3]?hybrid_joint_handles_[12+3].setCommand(0, 0, 0, 0, 1000*unitwheelvector.dot(feetPositions[3]- tempposition[3])):hybrid_joint_handles_[12+3].setCommand(0, 0, 0, 0, 0);//r
   // 1?hybrid_joint_handles_[12+0].setCommand(0, 0, 0, 0, 50*unitwheelvector.dot(feetPositions[0]- tempposition[0])):hybrid_joint_handles_[12+0].setCommand(0, 0, 0, 0, 0);//l
   // 1?hybrid_joint_handles_[12+1].setCommand(0, 0, 0, 0, 50*unitwheelvector.dot(feetPositions[2]- tempposition[2])):hybrid_joint_handles_[12+1].setCommand(0, 0, 0, 0, 0);//l
   // 1?hybrid_joint_handles_[12+2].setCommand(0, 0, 0, 0, 50*unitwheelvector.dot(feetPositions[1]- tempposition[1])):hybrid_joint_handles_[12+2].setCommand(0, 0, 0, 0, 0);//r
@@ -236,7 +245,7 @@ void LeggedController::setupMpc()
       std::make_shared<RosReferenceManager>(robot_name, legged_interface_->getReferenceManagerPtr());
   ros_reference_manager_ptr->subscribe(nh);
   mpc_->getSolverPtr()->addSynchronizedModule(gait_receiver_ptr);
-  mpc_->getSolverPtr()->addSynchronizedModule(utilitypolicy);
+  // mpc_->getSolverPtr()->addSynchronizedModule(utilitypolicy);
   mpc_->getSolverPtr()->setReferenceManager(ros_reference_manager_ptr);
   observation_publisher_ = nh.advertise<ocs2_msgs::mpc_observation>(robot_name + "_mpc_observation", 1);
 }

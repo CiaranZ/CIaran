@@ -26,6 +26,7 @@ public:
                     const std::vector<ContactSensorHandle>& contact_sensor_handles,
                     const hardware_interface::ImuSensorHandle& imu_sensor_handle);
   virtual vector_t update(const ros::Time& time, const ros::Duration& period) = 0;
+  virtual vector_t updatewheel() =0;
   size_t getMode();
   contact_flag_t getlegcontactmode();
 
@@ -33,6 +34,7 @@ protected:
   void updateAngular(const Eigen::Quaternion<scalar_t>& quat, const vector_t& angular_vel);
   void updateLinear(const vector_t& pos, const vector_t& linear_vel);
   void updateJointStates();
+  void updateWheelStates();
   void publishMsgs(const nav_msgs::Odometry& odom, const ros::Time& time);
 
   LeggedInterface& legged_interface_;
