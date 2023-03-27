@@ -76,12 +76,17 @@
         "variant": "cpp",
         "*.txx": "cpp",
         "core": "cpp",
-        "specialfunctions": "cpp"
+        "specialfunctions": "cpp",
+        "matrixfunctions": "cpp"
     },
     "ros.distro": "noetic",
     "python.autoComplete.extraPaths": [
         "/home/zcx/catkin_ws/devel/lib/python3/dist-packages",
         "/opt/ros/noetic/lib/python3/dist-packages"
     ],
-    "C_Cpp.errorSquiggles": "Disabled"
+    "C_Cpp.errorSquiggles": "Disabled",
+    "python.analysis.extraPaths": [
+        "/home/zcx/catkin_ws/devel/lib/python3/dist-packages",
+        "/opt/ros/noetic/lib/python3/dist-packages"
+    ]
 }

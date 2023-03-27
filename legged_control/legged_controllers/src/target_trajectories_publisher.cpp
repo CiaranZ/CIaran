@@ -26,59 +26,59 @@ scalar_t estimateTimeToTarget(const vector_t& desired_base_displacement)
   return std::max(rotation_time, displacement_time);
 }
 
-// TargetTrajectories targetPoseToTargetTrajectories(const vector_t& target_pose, const SystemObservation& observation,
-//                                                   const scalar_t& target_reaching_time)
-// {
-//   // desired time trajectory
-//   const scalar_array_t time_trajectory{ observation.time, target_reaching_time };
-
-//   // desired state trajectory
-//   vector_t current_pose = observation.state.segment<6>(6);
-//   // current_pose(2) = COM_HEIGHT;
-//   current_pose(4) = 0;
-//   current_pose(5) = 0;
-//   vector_array_t state_trajectory(2, vector_t::Zero(observation.state.size()));
-//   state_trajectory[0] << vector_t::Zero(6), current_pose, DEFAULT_JOINT_STATE;
-//   state_trajectory[1] << vector_t::Zero(6), target_pose, DEFAULT_JOINT_STATE;
-
-//   // desired input trajectory (just right dimensions, they are not used)
-//   const vector_array_t input_trajectory(2, vector_t::Zero(observation.input.size()));
-
-//   return { time_trajectory, state_trajectory, input_trajectory };
-// }
-
 TargetTrajectories targetPoseToTargetTrajectories(const vector_t& target_pose, const SystemObservation& observation,
                                                   const scalar_t& target_reaching_time)
 {
-  int segment_cnt = target_reaching_time/TIME_TO_TARGET+1;
   // desired time trajectory
-  scalar_array_t time_trajectory(segment_cnt+1, observation.time);
-  scalar_t obstime = observation.time ;
+  const scalar_array_t time_trajectory{ observation.time, target_reaching_time };
+
   // desired state trajectory
   vector_t current_pose = observation.state.segment<6>(6);
   // current_pose(2) = COM_HEIGHT;
   current_pose(4) = 0;
   current_pose(5) = 0;
-
-  vector_array_t state_trajectory(segment_cnt+1, vector_t::Zero(observation.state.size()));
-  const vector_array_t input_trajectory(segment_cnt+1, vector_t::Zero(observation.input.size()));
+  vector_array_t state_trajectory(2, vector_t::Zero(observation.state.size()));
   state_trajectory[0] << vector_t::Zero(6), current_pose, DEFAULT_JOINT_STATE;
-  for (size_t i = 1; i <= segment_cnt; i++)
-  {
-      vector_t target(6);
-      target = current_pose + (target_pose-current_pose)*i*1.0/(segment_cnt*1.0);
-      state_trajectory[i] << vector_t::Zero(6), target, DEFAULT_JOINT_STATE;
-      time_trajectory[i] = obstime + (target_reaching_time)*i*1.0/(segment_cnt*1.0);
-      std::cout << state_trajectory[i] << "\n";
-  }
-  
-  
+  state_trajectory[1] << vector_t::Zero(6), target_pose, DEFAULT_JOINT_STATE;
 
   // desired input trajectory (just right dimensions, they are not used)
-
+  const vector_array_t input_trajectory(2, vector_t::Zero(observation.input.size()));
 
   return { time_trajectory, state_trajectory, input_trajectory };
 }
+
+// TargetTrajectories targetPoseToTargetTrajectories(const vector_t& target_pose, const SystemObservation& observation,
+//                                                   const scalar_t& target_reaching_time)
+// {
+//   int segment_cnt = target_reaching_time/TIME_TO_TARGET+1;
+//   // desired time trajectory
+//   scalar_array_t time_trajectory(segment_cnt+1, observation.time);
+//   scalar_t obstime = observation.time ;
+//   // desired state trajectory
+//   vector_t current_pose = observation.state.segment<6>(6);
+//   // current_pose(2) = COM_HEIGHT;
+//   current_pose(4) = 0;
+//   current_pose(5) = 0;
+
+//   vector_array_t state_trajectory(segment_cnt+1, vector_t::Zero(observation.state.size()));
+//   const vector_array_t input_trajectory(segment_cnt+1, vector_t::Zero(observation.input.size()));
+//   state_trajectory[0] << vector_t::Zero(6), current_pose, DEFAULT_JOINT_STATE;
+//   for (size_t i = 1; i <= segment_cnt; i++)
+//   {
+//       vector_t target(6);
+//       target = current_pose + (target_pose-current_pose)*i*1.0/(segment_cnt*1.0);
+//       state_trajectory[i] << vector_t::Zero(6), target, DEFAULT_JOINT_STATE;
+//       time_trajectory[i] = obstime + (target_reaching_time)*i*1.0/(segment_cnt*1.0);
+//       // std::cout << state_trajectory[i] << "\n";
+//   }
+  
+  
+
+//   // desired input trajectory (just right dimensions, they are not used)
+
+
+//   return { time_trajectory, state_trajectory, input_trajectory };
+// }
 TargetTrajectories goalToTargetTrajectories(const vector_t& goal, const SystemObservation& observation)
 {
   const vector_t current_pose = observation.state.segment<6>(6);
@@ -101,16 +101,40 @@ TargetTrajectories cmdVelToTargetTrajectories(const vector_t& cmd_vel, const Sys
   const vector_t current_pose = observation.state.segment<6>(6);
   const Eigen::Matrix<scalar_t, 3, 1> zyx = current_pose.tail(3);
   vector_t cmd_vel_rot = getRotationMatrixFromZyxEulerAngles(zyx) * cmd_vel.head(3);
-
+  static scalar_t com_hegiht_num = COM_HEIGHT;
+  static scalar_t roll_num = 0;
   const scalar_t time_to_target = TIME_TO_TARGET;
   const vector_t target_pose = [&]() {
     vector_t target(6);
-    target(0) = current_pose(0) + cmd_vel_rot(0) * time_to_target;
-    target(1) = current_pose(1) + cmd_vel_rot(1) * time_to_target;
-    target(2) = COM_HEIGHT;
-    target(3) = current_pose(3) + cmd_vel(3) * time_to_target;
-    target(4) = 0;
-    target(5) = 0;
+    target(0) = current_pose(0) + cmd_vel_rot(0) *TARGET_DISPLACEMENT_VELOCITY* time_to_target;
+    target(1) = current_pose(1) + cmd_vel_rot(1) * TARGET_DISPLACEMENT_VELOCITY*time_to_target;
+    if(cmd_vel(2)>0.7)
+    {
+      com_hegiht_num += 0.01;
+      target(2) = com_hegiht_num;
+    }
+    else if(cmd_vel(2)<-0.7)
+    {
+      com_hegiht_num -= 0.01;
+      target(2) = com_hegiht_num;
+    }
+    else
+      target(2) = com_hegiht_num;
+    target(3) = current_pose(3) + cmd_vel(3)*TARGET_ROTATION_VELOCITY * time_to_target;
+    target(4) = current_pose(4) + cmd_vel(4)*TARGET_ROTATION_VELOCITY * time_to_target;
+    if(cmd_vel(5)>0.7)
+    {
+      roll_num += 0.01;
+      target(5) = roll_num;
+    }
+    else if(cmd_vel(5)<-0.7)
+    {
+      roll_num -= 0.01;
+      target(5) = roll_num;
+    }
+    else
+      target(5) = roll_num;
+    std::cout << target << "\n";
     return target;
   }();
 

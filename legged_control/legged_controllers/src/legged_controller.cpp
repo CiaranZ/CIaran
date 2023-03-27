@@ -157,7 +157,7 @@ void LeggedController::update(const ros::Time& time, const ros::Duration& period
   std::cout <<  x<<std::endl;
     ROS_INFO_STREAM("AFTER WBC");
 // vector_t x;
-  vector_t torque = x.tail(16);
+  vector_t torque = x.tail(12);
 
   vector_t pos_des = centroidal_model::getJointAngles(optimized_state, legged_interface_->getCentroidalModelInfo());
   vector_t vel_des = centroidal_model::getJointVelocities(optimized_input, legged_interface_->getCentroidalModelInfo());
@@ -171,16 +171,17 @@ void LeggedController::update(const ros::Time& time, const ros::Duration& period
   pinocchio::forwardKinematics(model, data, centroidal_model::getGeneralizedCoordinates(current_observation_.state, legged_interface_->getCentroidalModelInfo()));
   pinocchio::updateFramePlacements(model, data);
   auto tempposition = ee_kinematics.getPosition(current_observation_.state);  
+  auto tempvelocity = ee_kinematics.getVelocity(vector_t(),vector_t());  
   auto state_ref = mpc_mrt_interface_->getReferenceManager().getTargetTrajectories().stateTrajectory.back();
   pinocchio::forwardKinematics(model, data, centroidal_model::getGeneralizedCoordinates(optimized_state, legged_interface_->getCentroidalModelInfo()));
   pinocchio::updateFramePlacements(model, data);
   auto feetPositions = ee_kinematics.getPosition(optimized_state);
-
+  auto feetvelocity = ee_kinematics.getVelocity(vector_t(),vector_t());  
   for (size_t j = 0; j < legged_interface_->getCentroidalModelInfo().actuatedDofNum; ++j)
     hybrid_joint_handles_[j].setCommand(pos_des(j), vel_des(j), 5, 3, torque(j));
 
-  for (size_t j = 12; j < 16; ++j)
-    hybrid_joint_handles_[j].setCommand(0, 0, 0, 0, torque(j));
+  // for (size_t j = 12; j < 16; ++j)
+  //   hybrid_joint_handles_[j].setCommand(0, 0, 0, 0, torque(j));
 
   contact_flag_t is_contact;
 
@@ -188,10 +189,10 @@ void LeggedController::update(const ros::Time& time, const ros::Duration& period
   unitwheelvector(0) = cos(current_observation_.state(9));
   unitwheelvector(1) = sin(current_observation_.state(9));
   is_contact = modeNumber2StanceLeg(planned_mode);
-  // is_contact[0]?hybrid_joint_handles_[12+0].setCommand(0, 0, 0, 0, 1000*unitwheelvector.dot(feetPositions[0]- tempposition[0])):hybrid_joint_handles_[12+0].setCommand(0, 0, 0, 0, 0);//l
-  // is_contact[2]?hybrid_joint_handles_[12+1].setCommand(0, 0, 0, 0, 1000*unitwheelvector.dot(feetPositions[2]- tempposition[2])):hybrid_joint_handles_[12+1].setCommand(0, 0, 0, 0, 0);//l
-  // is_contact[1]?hybrid_joint_handles_[12+2].setCommand(0, 0, 0, 0, 1000*unitwheelvector.dot(feetPositions[1]- tempposition[1])):hybrid_joint_handles_[12+2].setCommand(0, 0, 0, 0, 0);//r
-  // is_contact[3]?hybrid_joint_handles_[12+3].setCommand(0, 0, 0, 0, 1000*unitwheelvector.dot(feetPositions[3]- tempposition[3])):hybrid_joint_handles_[12+3].setCommand(0, 0, 0, 0, 0);//r
+  is_contact[0]?hybrid_joint_handles_[12+0].setCommand(0, 0, 0, 0, 1000*unitwheelvector.dot(feetPositions[0]- tempposition[0])):hybrid_joint_handles_[12+0].setCommand(0, 0, 0, 0, 0);//l
+  is_contact[2]?hybrid_joint_handles_[12+1].setCommand(0, 0, 0, 0, 1000*unitwheelvector.dot(feetPositions[2]- tempposition[2])):hybrid_joint_handles_[12+1].setCommand(0, 0, 0, 0, 0);//l
+  is_contact[1]?hybrid_joint_handles_[12+2].setCommand(0, 0, 0, 0, 1000*unitwheelvector.dot(feetPositions[1]- tempposition[1])):hybrid_joint_handles_[12+2].setCommand(0, 0, 0, 0, 0);//r
+  is_contact[3]?hybrid_joint_handles_[12+3].setCommand(0, 0, 0, 0, 1000*unitwheelvector.dot(feetPositions[3]- tempposition[3])):hybrid_joint_handles_[12+3].setCommand(0, 0, 0, 0, 0);//r
   // 1?hybrid_joint_handles_[12+0].setCommand(0, 0, 0, 0, 50*unitwheelvector.dot(feetPositions[0]- tempposition[0])):hybrid_joint_handles_[12+0].setCommand(0, 0, 0, 0, 0);//l
   // 1?hybrid_joint_handles_[12+1].setCommand(0, 0, 0, 0, 50*unitwheelvector.dot(feetPositions[2]- tempposition[2])):hybrid_joint_handles_[12+1].setCommand(0, 0, 0, 0, 0);//l
   // 1?hybrid_joint_handles_[12+2].setCommand(0, 0, 0, 0, 50*unitwheelvector.dot(feetPositions[1]- tempposition[1])):hybrid_joint_handles_[12+2].setCommand(0, 0, 0, 0, 0);//r

@@ -158,7 +158,7 @@ Q
 
   ;; Base Pose: [position, orientation] ;;
   (6,6)   1000.0   ; p_base_x
-  (7,7)   1000.0   ; p_base_y
+  (7,7)   3000.0   ; p_base_y
   (8,8)   1500.0   ; p_base_z
   (9,9)   100.0    ; theta_base_z
   (10,10) 300.0    ; theta_base_y
@@ -186,16 +186,16 @@ R
 
   ;; Feet Contact Forces: [LF, RF, LH, RH] ;;
   (0,0)   1.0       ; left_front_force
-  (1,1)   1.0       ; left_front_force
+  (1,1)   2.0       ; left_front_force
   (2,2)   1.0       ; left_front_force
   (3,3)   1.0       ; right_front_force
-  (4,4)   1.0       ; right_front_force
+  (4,4)   2.0       ; right_front_force
   (5,5)   1.0       ; right_front_force
   (6,6)   1.0       ; left_hind_force
-  (7,7)   1.0       ; left_hind_force
+  (7,7)   2.0       ; left_hind_force
   (8,8)   1.0       ; left_hind_force
   (9,9)   1.0       ; right_hind_force
-  (10,10) 1.0       ; right_hind_force
+  (10,10) 2.0       ; right_hind_force
   (11,11) 1.0       ; right_hind_force
 
   ;; foot velocity relative to base: [LF, LH, RF, RH] (uses the Jacobian at nominal configuration) ;;
@@ -229,7 +229,7 @@ torqueLimitsTask
    (0,0)  33.5     ; HAA
    (1,0)  33.5     ; HFE
    (2,0)  33.5     ; KFE
-   (3,0)  33.5        ; WHEEL
+
 }
 
 frictionConeTask
@@ -240,5 +240,11 @@ frictionConeTask
 swingLegTask
 {
     kp                   350
+    kd                   37
+}
+
+stanceLegTask
+{
+    kp                   700
     kd                   37
 }

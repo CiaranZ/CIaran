@@ -10,7 +10,8 @@
 #include <pinocchio/algorithm/rnea.hpp>
 #include <ocs2_centroidal_model/AccessHelperFunctions.h>
 #include <ocs2_centroidal_model/ModelHelperFunctions.h>
-
+using Eigen::MatrixXd;
+using Eigen::VectorXd;
 // Decision Variables: x = [\dot u^T, F^T, \tau^T]^T   x=加速度 接触力  力矩
 namespace legged
 {
@@ -22,7 +23,7 @@ Wbc::Wbc(const std::string& task_file, LeggedInterface& legged_interface,
   , mapping_(info_)
   , ee_kinematics_(ee_kinematics.clone())
 {
-  num_decision_vars_ = info_.generalizedCoordinatesNum  + 3 * info_.numThreeDofContacts + info_.actuatedDofNum+4;     //18+12+12+4 46
+  num_decision_vars_ = info_.generalizedCoordinatesNum  + 3 * info_.numThreeDofContacts + info_.actuatedDofNum;     //18+12+12+4 46
   centroidal_dynamics_.setPinocchioInterface(pino_interface_);
   mapping_.setPinocchioInterface(pino_interface_);
   measured_q_ = vector_t(info_.generalizedCoordinatesNum);
@@ -107,8 +108,8 @@ Task Wbc::formulateFloatingBaseEomTask()   //动力学模型约束
   s.block(0, 0, info_.actuatedDofNum, 6).setZero();                         //最前面6个是线速度和角速度
   s.block(0, 6, info_.actuatedDofNum, info_.actuatedDofNum).setIdentity();
 
-  matrix_t a(info_.generalizedCoordinatesNum, num_decision_vars_);//18*48 x 48*1
-  vector_t b(info_.generalizedCoordinatesNum);//18*1
+  matrix_t a(info_.generalizedCoordinatesNum, num_decision_vars_);
+  vector_t b(info_.generalizedCoordinatesNum);
   a << data.M, -j_.transpose(), -s.transpose();
   b = -data.nle;
   return Task(a, b, matrix_t(), vector_t());
@@ -116,25 +117,25 @@ Task Wbc::formulateFloatingBaseEomTask()   //动力学模型约束
 
 Task Wbc::formulateTorqueLimitsTask()
 {
-  matrix_t d(2 * (info_.actuatedDofNum+4), num_decision_vars_);   //32*48 x 48*1
+  matrix_t d(2 * info_.actuatedDofNum, num_decision_vars_);
   d.setZero();
-  matrix_t i = matrix_t::Identity(info_.actuatedDofNum+4, info_.actuatedDofNum+4);
+  matrix_t i = matrix_t::Identity(info_.actuatedDofNum, info_.actuatedDofNum);
   d.block(0, info_.generalizedCoordinatesNum + 3 * info_.numThreeDofContacts, info_.actuatedDofNum,
-          info_.actuatedDofNum+4) = i;
+          info_.actuatedDofNum) = i;
   d.block(info_.actuatedDofNum, info_.generalizedCoordinatesNum + 3 * info_.numThreeDofContacts, info_.actuatedDofNum,
-          info_.actuatedDofNum+4) = -i;
-  vector_t f(2 * (info_.actuatedDofNum+4));//32
-  for (size_t l = 0; l < 2 * (info_.actuatedDofNum+4) / 4; ++l)
-    f.segment<4>(4 * l) = torque_limits_;
+          info_.actuatedDofNum) = -i;
+  vector_t f(2 * info_.actuatedDofNum);
+  for (size_t l = 0; l < 2 * info_.actuatedDofNum / 3; ++l)
+    f.segment<3>(3 * l) = torque_limits_;
 
   return Task(matrix_t(), vector_t(), d, f);
 }
 
 Task Wbc::formulateNoContactMotionTask()//ax=v
 {
-  matrix_t a(3 * num_contacts_, num_decision_vars_);//12*48
-  vector_t b(a.rows());//12*1
-  vector_t wa(3);
+  matrix_t a(3 * num_contacts_, num_decision_vars_);
+  vector_t b(a.rows());
+  vector_t wa(4);
   a.setZero();
   b.setZero();
   wa.setZero();
@@ -161,7 +162,7 @@ Task Wbc::formulateNoContactMotionTask()//ax=v
 
 Task Wbc::formulateFrictionConeTask()
 {
-  matrix_t a(3 * (info_.numThreeDofContacts - num_contacts_), num_decision_vars_);//12*48 
+  matrix_t a(3 * (info_.numThreeDofContacts - num_contacts_), num_decision_vars_);
   a.setZero();
   size_t j = 0;
   for (size_t i = 0; i < info_.numThreeDofContacts; ++i)
@@ -223,7 +224,7 @@ Task Wbc::formulateSwingLegTask()
   std::vector<vector3_t> pos_desired = ee_kinematics_->getPosition(current_state_temp);
   std::vector<vector3_t> vel_desired = ee_kinematics_->getVelocity(vector_t(), vector_t());
 
-  matrix_t a(3 * (info_.numThreeDofContacts - num_contacts_), num_decision_vars_);//12*48
+  matrix_t a(3 * (info_.numThreeDofContacts), num_decision_vars_);
   vector_t b(a.rows());
   a.setZero();
   b.setZero();
@@ -234,6 +235,19 @@ Task Wbc::formulateSwingLegTask()
       vector3_t accel = swing_kp_ * (pos_desired[i] - pos_measured[i]) + swing_kd_ * (vel_desired[i] - vel_measured[i]);
       a.block(3 * j, 0, 3, info_.generalizedCoordinatesNum) = j_.block(3 * i, 0, 3, info_.generalizedCoordinatesNum);
       b.segment(3 * j, 3) = accel - dj_.block(3 * i, 0, 3, info_.generalizedCoordinatesNum) * measured_v_;
+      j++;
+    }
+    else
+    {
+      MatrixXd Rot; 
+      Rot.setZero(3,3);
+      Rot(0,0)=cos(measured_q_(3))*cos(measured_q_(3));
+      Rot(0,1)=-1*sin(measured_q_(3))*cos(measured_q_(3));
+      Rot(1,0)=Rot(0,1);
+      Rot(1,1)=sin(measured_q_(3))*sin(measured_q_(3));
+      vector3_t accel = stance_kp_ * (pos_desired[i] - pos_measured[i]) + stance_kd_ * (vel_desired[i] - vel_measured[i]);
+      a.block(3 * j, 0, 3, info_.generalizedCoordinatesNum) = Rot*j_.block(3 * i, 0, 3, info_.generalizedCoordinatesNum);
+      b.segment(3 * j, 3) = Rot*accel - dj_.block(3 * i, 0, 3, info_.generalizedCoordinatesNum) * measured_v_;
       j++;
     }
 
@@ -256,7 +270,7 @@ Task Wbc::formulateContactForceTask()
 void Wbc::loadTasksSetting(const std::string& task_file, bool verbose)
 {
   // Load task file
-  torque_limits_ = vector_t((info_.actuatedDofNum +4)/ 4);
+  torque_limits_ = vector_t(info_.actuatedDofNum / 4);
   loadData::loadEigenMatrix(task_file, "torqueLimitsTask", torque_limits_);
   if (verbose)
   {
@@ -286,6 +300,17 @@ void Wbc::loadTasksSetting(const std::string& task_file, bool verbose)
   }
   loadData::loadPtreeValue(pt, swing_kp_, prefix + "kp", verbose);
   loadData::loadPtreeValue(pt, swing_kd_, prefix + "kd", verbose);
+
+  prefix = "stanceLegTask.";
+  if (verbose)
+  {
+    std::cerr << "\n #### Swing Leg Task: ";
+    std::cerr << "\n #### =============================================================================\n";
+  }
+  loadData::loadPtreeValue(pt, stance_kp_, prefix + "kp", verbose);
+  loadData::loadPtreeValue(pt, stance_kd_, prefix + "kd", verbose);
+
 }
 
 }  // namespace legged
+

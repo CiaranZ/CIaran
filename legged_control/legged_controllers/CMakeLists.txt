@@ -80,6 +80,20 @@ target_link_libraries(legged_target_trajectories_publisher
         )
 target_compile_options(legged_target_trajectories_publisher PRIVATE ${OCS2_CXX_FLAGS})
 
+
+# joy publish node
+add_executable(joy_cmd_publisher
+        src/joy_interface.cpp
+        )
+add_dependencies(joy_cmd_publisher
+        ${PROJECT_NAME}
+        ${catkin_EXPORTED_TARGETS}
+        )
+target_link_libraries(joy_cmd_publisher
+        ${PROJECT_NAME}
+        ${catkin_LIBRARIES}
+        )
+
 # Mark executables and/or libraries for installation
 install(TARGETS ${PROJECT_NAME}
         ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}

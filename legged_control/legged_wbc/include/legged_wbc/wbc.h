@@ -50,7 +50,7 @@ private:
 
   // Task Parameters:
   vector_t torque_limits_;
-  scalar_t friction_coeff_, swing_kp_, swing_kd_;
+  scalar_t friction_coeff_, swing_kp_, swing_kd_,stance_kp_, stance_kd_;
 };
 
 }  // namespace legged

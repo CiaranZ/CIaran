@@ -13,7 +13,7 @@
 
 #include <ocs2_mpc/SystemObservation.h>
 #include <ocs2_ros_interfaces/command/TargetTrajectoriesRosPublisher.h>
-
+#include <sensor_msgs/Joy.h>
 namespace legged
 {
 using namespace ocs2;
@@ -71,23 +71,40 @@ public:
       target_trajectories_publisher_->publishTargetTrajectories(trajectories);
     };
 
-    // cmd_vel subscriber
-    auto cmd_vel_callback = [this](const geometry_msgs::Twist::ConstPtr& msg) {
+    // // cmd_vel subscriber
+    // auto cmd_vel_callback = [this](const geometry_msgs::Twist::ConstPtr& msg) {
+    //   if (latest_observation_.time == 0.0)
+    //     return;
+
+    //   vector_t cmd_vel = vector_t::Zero(4);
+    //   cmd_vel[0] = msg->linear.x;
+    //   cmd_vel[1] = msg->linear.y;
+    //   cmd_vel[2] = msg->linear.z;
+    //   cmd_vel[3] = msg->angular.z;
+
+    //   const auto trajectories = cmd_vel_to_target_trajectories_(cmd_vel, latest_observation_);
+    //   target_trajectories_publisher_->publishTargetTrajectories(trajectories);
+    // };
+
+    auto joy_cmd_vel_callback = [this](const sensor_msgs::Joy::ConstPtr& msg) {
       if (latest_observation_.time == 0.0)
         return;
 
-      vector_t cmd_vel = vector_t::Zero(4);
-      cmd_vel[0] = msg->linear.x;
-      cmd_vel[1] = msg->linear.y;
-      cmd_vel[2] = msg->linear.z;
-      cmd_vel[3] = msg->angular.z;
+      vector_t cmd_vel = vector_t::Zero(6);
+      cmd_vel[0] = msg->axes[1];//x 左上
+      cmd_vel[1] = msg->axes[0];//y  
+      cmd_vel[2] = msg->axes[7];//z 按钮
+      cmd_vel[3] = msg->axes[2];// yaw 
+      cmd_vel[4] = msg->axes[3];// pithc
+      cmd_vel[5] = msg->axes[6];// roll 按钮
 
       const auto trajectories = cmd_vel_to_target_trajectories_(cmd_vel, latest_observation_);
       target_trajectories_publisher_->publishTargetTrajectories(trajectories);
     };
 
     goal_sub_ = nh.subscribe<geometry_msgs::PoseStamped>("/move_base_simple/goal", 1, goal_callback);
-    cmd_vel_sub_ = nh.subscribe<geometry_msgs::Twist>("/cmd_vel", 1, cmd_vel_callback);
+    // cmd_vel_sub_ = nh.subscribe<geometry_msgs::Twist>("/cmd_vel", 1, cmd_vel_callback);
+    joy_cmd_vel_sub = nh.subscribe<sensor_msgs::Joy>("/xboxvcmd",1,joy_cmd_vel_callback);
   }
 
 private:
@@ -95,7 +112,7 @@ private:
 
   std::unique_ptr<TargetTrajectoriesRosPublisher> target_trajectories_publisher_;
 
-  ::ros::Subscriber observation_sub_, goal_sub_, cmd_vel_sub_;
+  ::ros::Subscriber observation_sub_, goal_sub_, cmd_vel_sub_,joy_cmd_vel_sub;
   tf2_ros::Buffer buffer_;
   tf2_ros::TransformListener tf2_;
 

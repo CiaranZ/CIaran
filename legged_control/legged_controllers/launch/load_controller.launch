@@ -34,4 +34,6 @@
 
     <node pkg="legged_controllers" type="legged_target_trajectories_publisher" name="legged_robot_target"
           output="screen"/>
+
+    <node pkg="legged_controllers" type="joy_cmd_publisher" name="joy_cmd"/>
 </launch>
