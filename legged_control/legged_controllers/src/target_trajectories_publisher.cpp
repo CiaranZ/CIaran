@@ -110,12 +110,12 @@ TargetTrajectories cmdVelToTargetTrajectories(const vector_t& cmd_vel, const Sys
     target(1) = current_pose(1) + cmd_vel_rot(1) * TARGET_DISPLACEMENT_VELOCITY*time_to_target;
     if(cmd_vel(2)>0.7)
     {
-      com_hegiht_num += 0.01;
+      com_hegiht_num += 0.001;
       target(2) = com_hegiht_num;
     }
     else if(cmd_vel(2)<-0.7)
     {
-      com_hegiht_num -= 0.01;
+      com_hegiht_num -= 0.001;
       target(2) = com_hegiht_num;
     }
     else
@@ -124,12 +124,12 @@ TargetTrajectories cmdVelToTargetTrajectories(const vector_t& cmd_vel, const Sys
     target(4) = current_pose(4) + cmd_vel(4)*TARGET_ROTATION_VELOCITY * time_to_target;
     if(cmd_vel(5)>0.7)
     {
-      roll_num += 0.01;
+      roll_num += 0.0011;
       target(5) = roll_num;
     }
     else if(cmd_vel(5)<-0.7)
     {
-      roll_num -= 0.01;
+      roll_num -= 0.001;
       target(5) = roll_num;
     }
     else

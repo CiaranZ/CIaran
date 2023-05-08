@@ -1,26 +1,20 @@
 cmake_minimum_required(VERSION 3.10)
-project(legged_hw)
+project(legged_unitree_hw)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 find_package(catkin REQUIRED
         COMPONENTS
         roscpp
-        legged_common
-        controller_manager
-        urdf
+        legged_hw
         )
 
 catkin_package(
         INCLUDE_DIRS
         include
-        LIBRARIES
-        ${PROJECT_NAME}
         CATKIN_DEPENDS
         roscpp
-        legged_common
-        controller_manager
-        urdf
+        legged_hw
 )
 
 ###########
@@ -32,13 +26,20 @@ include_directories(
         ${catkin_INCLUDE_DIRS}
 )
 
-add_library(${PROJECT_NAME}
-        src/LeggedHW.cpp
-        src/LeggedHWLoop.cpp
+link_directories(lib)
+
+set(EXTRA_LIBS libunitree_legged_sdk_amd64.so lcm)
+
+## Declare cpp executables
+add_executable(${PROJECT_NAME}
+        src/legged_unitree_hw.cpp
+        src/UnitreeHW.cpp
         )
 
+## Specify libraries to link executable targets against
 target_link_libraries(${PROJECT_NAME}
         ${catkin_LIBRARIES}
+        ${EXTRA_LIBS}
         )
 
 #########################
@@ -49,10 +50,11 @@ if (cmake_clang_tools_FOUND)
     message(STATUS "Run clang tooling for target " ${PROJECT_NAME})
     add_clang_tooling(
             TARGETS ${PROJECT_NAME}
-            SOURCE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/include
-            CT_HEADER_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include
+            SOURCE_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/src ${CMAKE_CURRENT_SOURCE_DIR}/include/legged_unitree_hw
+            CT_HEADER_DIRS ${CMAKE_CURRENT_SOURCE_DIR}/include/legged_unitree_hw
             CF_WERROR
     )
+
 endif (cmake_clang_tools_FOUND)
 
 #############
@@ -70,4 +72,9 @@ install(TARGETS ${PROJECT_NAME}
 install(DIRECTORY include/${PROJECT_NAME}/
         DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
         FILES_MATCHING PATTERN "*.h"
+        )
+
+# Mark other files for installation
+install(DIRECTORY config launch lib
+        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
         )

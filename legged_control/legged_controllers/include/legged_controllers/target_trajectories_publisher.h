@@ -94,8 +94,8 @@ public:
       cmd_vel[0] = msg->axes[1];//x 左上
       cmd_vel[1] = msg->axes[0];//y  
       cmd_vel[2] = msg->axes[7];//z 按钮
-      cmd_vel[3] = msg->axes[2];// yaw 
-      cmd_vel[4] = msg->axes[3];// pithc
+      cmd_vel[3] = msg->axes[3];// yaw 
+      cmd_vel[4] = msg->axes[4];// pithc
       cmd_vel[5] = msg->axes[6];// roll 按钮
 
       const auto trajectories = cmd_vel_to_target_trajectories_(cmd_vel, latest_observation_);
