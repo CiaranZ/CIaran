@@ -10,6 +10,8 @@
     <xacro:include filename="$(find unitree_description)/urdf/common/imu.xacro"/>
 
     <xacro:include filename="$(find unitree_description)/urdf/$(arg robot_type)/const.xacro"/>
+    <xacro:include filename="$(find unitree_description)/urdf/common/laser.xacro"/>
+    <!-- <xacro:include filename="$(find unitree_description)/urdf/livox_mid360.xacro"/> -->
 
     <!-- <link name="world"/>
     <joint name="base_static_joint" type="fixed">
@@ -40,9 +42,14 @@
                     izz="${trunk_izz}"/>
         </inertial>
     </link>
-
+    <joint name="base_joint" type="fixed">
+        <origin xyz="0.0 0.0 0." rpy="0 0 0"/>
+        <parent link="base"/>
+        <child link="base_footprint"/>
+    </joint>
+    <link name="base_footprint"/>
     <xacro:IMU connected_to="base" imu_name="unitree_imu" xyz="0. 0. 0." rpy="0. 0. 0."/>
-
+    <!-- <xacro:Livox_Mid360 /> -->
     <xacro:leg prefix="RF" mirror="-1" mirror_dae="False" front_hind="1" front_hind_dae="True">
         <origin rpy="0 0 0" xyz="${leg_offset_x} ${-leg_offset_y} 0"/>
     </xacro:leg>
@@ -58,5 +65,6 @@
     <xacro:leg prefix="LH" mirror="1" mirror_dae="True" front_hind="-1" front_hind_dae="False">
         <origin rpy="0 0 0" xyz="${-leg_offset_x} ${leg_offset_y} 0"/>
     </xacro:leg>
+
 
 </robot>
